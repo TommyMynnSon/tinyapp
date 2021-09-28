@@ -10,6 +10,10 @@ const urlDatabase = {
   "yfjptz64": "https://www.tsn.ca"
 };
 
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
