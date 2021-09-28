@@ -30,16 +30,16 @@ const generateRandomString = () => {
   for (let i = 0; i < 6; i++) {
     // Pick random type
     const min = 1;
-    const max = 3
+    const max = 3;
 
     let type = Math.floor(Math.random() * (max - min + 1)) + min;
 
     // Random HTML code
     let asciiCode;
 
-    // Pick random uppercase letter HTML code 
+    // Pick random uppercase letter HTML code
     if (type === 1) {
-      asciiCode = Math.floor(Math.random() * (upperCaseEnd - upperCaseStart + 1)) + upperCaseStart
+      asciiCode = Math.floor(Math.random() * (upperCaseEnd - upperCaseStart + 1)) + upperCaseStart;
     }
 
     // Pick random lowercase letter HTML code
@@ -83,6 +83,13 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+
+  res.redirect(longURL);
+});
+
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
@@ -98,7 +105,7 @@ app.post("/urls", (req, res) => {
 
   urlDatabase[shortURL] = longURL;
 
-  res.redirect(`/urls/:${shortURL}`);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 // Listen to connections on the specified host and port
