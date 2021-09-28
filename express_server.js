@@ -1,3 +1,4 @@
+const bodyParser = require("body-parser");
 const express = require("express");
 const app = express();
 const PORT = 8080;
@@ -9,6 +10,8 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
   "yfjptz64": "https://www.tsn.ca"
 };
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
