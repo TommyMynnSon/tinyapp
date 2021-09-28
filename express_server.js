@@ -5,16 +5,23 @@ const PORT = 8080;
 
 app.set('view engine', 'ejs');
 
+const urlDatabase = {
+  "b2xVn2": "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com",
+  "yfjptz64": "https://www.tsn.ca"
+};
+
+// Generates a alphanumeric string of length 6
 const generateRandomString = () => {
-  // (Type 1) ASCII value bounds for uppercase letters
+  // (Type 1) HTML code value bounds for uppercase letters
   const upperCaseStart = 65;
   const upperCaseEnd = 90;
 
-  // (Type 2) ASCII value bounds for lowercase letters
+  // (Type 2) HTML code value bounds for lowercase letters
   const lowerCaseStart = 97;
   const lowerCaseEnd = 122;
 
-  // (Type 3) ASCII value bounds for the numbers 0 - 9
+  // (Type 3) HTML code value bounds for the numbers 0 - 9
   const numberStart = 48;
   const numberEnd = 57;
 
@@ -27,19 +34,20 @@ const generateRandomString = () => {
 
     let type = Math.floor(Math.random() * (max - min + 1)) + min;
 
+    // Random HTML code
     let asciiCode;
 
-    // Pick random uppercase letter ASCII code 
+    // Pick random uppercase letter HTML code 
     if (type === 1) {
       asciiCode = Math.floor(Math.random() * (upperCaseEnd - upperCaseStart + 1)) + upperCaseStart
     }
 
-    // Pick random lowercase letter ASCII code
+    // Pick random lowercase letter HTML code
     if (type === 2) {
       asciiCode = Math.floor(Math.random() * (lowerCaseEnd - lowerCaseStart + 1)) + lowerCaseStart;
     }
 
-    // Pick random number ASCII code
+    // Pick random number HTML code
     if (type === 3) {
       asciiCode = Math.floor(Math.random() * (numberEnd - numberStart + 1)) + numberStart;
     }
@@ -47,20 +55,13 @@ const generateRandomString = () => {
     randomString += String.fromCharCode(asciiCode);
   }
 
-  console.log(randomString);
   return randomString;
 };
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-  "yfjptz64": "https://www.tsn.ca"
-};
-
-// MIDDLEWARE
+// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// GET
+// GET handlers
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -90,13 +91,17 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// POST
+// POST handlers
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const shortURL = generateRandomString();
+  const longURL = req.body.longURL;
+
+  urlDatabase[shortURL] = longURL;
+
+  res.redirect(`/urls/:${shortURL}`);
 });
 
-// CONNECT
+// Listen to connections on the specified host and port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
