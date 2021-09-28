@@ -11,8 +11,10 @@ const urlDatabase = {
   "yfjptz64": "https://www.tsn.ca"
 };
 
+// MIDDLEWARE
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// GET
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -42,6 +44,13 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// POST
+app.post("/urls", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+});
+
+// CONNECT
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
