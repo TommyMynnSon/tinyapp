@@ -116,6 +116,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
+app.post("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+
+  res.redirect(`/urls/${shortURL}`);
+});
+
 // Listen to connections on the specified host and port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
