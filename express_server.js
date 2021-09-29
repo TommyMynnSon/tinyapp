@@ -6,6 +6,10 @@ const PORT = 8080;
 
 app.set('view engine', 'ejs');
 
+const users = {
+
+};
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
@@ -102,6 +106,10 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render(`urls_show`, templateVars);
 });
 
+app.get("/register", (req, res) => {
+  res.render("registration");
+});
+
 // POST handlers
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
@@ -138,6 +146,20 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
+
+  res.redirect(`/urls`);
+});
+
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+  users[id] = { id, email, password };
+
+  res.cookie("user_id", id);
+
+  console.log(users);
 
   res.redirect(`/urls`);
 });
