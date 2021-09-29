@@ -116,11 +116,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id;
+  const newLongURL = req.body.newLongURL;
 
-  res.redirect(`/urls/${shortURL}`);
+  urlDatabase[shortURL] = newLongURL;
+
+  res.redirect(`/urls`);
 });
+
 
 // Listen to connections on the specified host and port
 app.listen(PORT, () => {
