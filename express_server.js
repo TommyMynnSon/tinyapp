@@ -1,4 +1,5 @@
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const express = require("express");
 const app = express();
 const PORT = 8080;
@@ -60,6 +61,7 @@ const generateRandomString = () => {
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // GET handlers
 app.get("/urls/new", (req, res) => {
@@ -80,7 +82,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
-  res.render("urls_index", templateVars);
+  res.render(`urls_index`, templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -95,7 +97,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const longURL = urlDatabase[shortURL];
 
   const templateVars = { shortURL, longURL };
-  res.render("urls_show", templateVars);
+  res.render(`urls_show`, templateVars);
 });
 
 // POST handlers
@@ -113,7 +115,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
   delete urlDatabase[shortURL];
 
-  res.redirect("/urls");
+  res.redirect(`/urls`);
 });
 
 app.post("/urls/:id", (req, res) => {
@@ -125,6 +127,12 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls`);
 });
 
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  res.cookie("username", username);
+
+  res.redirect(`urls`);
+});
 
 // Listen to connections on the specified host and port
 app.listen(PORT, () => {
