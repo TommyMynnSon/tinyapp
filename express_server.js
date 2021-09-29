@@ -131,6 +131,10 @@ app.get("/register", (req, res) => {
   res.render("registration");
 });
 
+app.get("/login", (req, res) => {
+  res.render("login");
+})
+
 // POST handlers
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
@@ -208,6 +212,10 @@ app.post("/register", (req, res) => {
   res.cookie("user_id", id);
 
   res.redirect(`/urls`);
+});
+
+app.post("/login", (req, res) => {
+
 });
 
 // Listen to connections on the specified host and port
