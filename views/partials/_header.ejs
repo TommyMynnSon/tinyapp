@@ -11,10 +11,10 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if (username!==undefined) { %>
+    <% if (user.email!==undefined) { %>
       <form class="form-inline mt-0" action="/logout" method="POST">
         <div class="form-group">
-          <p class="mr-1 text-right" style="width: 300px; margin: 1em">Logged in As: <%= username %>
+          <p class="mr-1 text-right" style="width: 300px; margin: 1em">Logged in As: <%= user.email %>
           </p>
           <button type="submit" class="btn btn-primary btn-outline-dark bg-transparent ml-3">Logout</button>
         </div>
