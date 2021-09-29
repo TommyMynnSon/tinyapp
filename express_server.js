@@ -63,6 +63,17 @@ const generateRandomString = () => {
   return randomString;
 };
 
+// Checks if a given email has already been used to register
+const isNewEmail = (email) => {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -165,6 +176,32 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+
+  // Case: empty email and password
+  if (!email && !password) {
+    res.statusCode = 400;
+    return res.send("Email and password cannot be blank");
+  }
+
+  // Case: empty email
+  if (!email) {
+    res.statusCode = 400;
+    return res.send("Email cannot be blank");
+  }
+
+  // Case: empty password
+  if (!password) {
+    res.statusCode = 400;
+    return res.send("Password cannot be blank");
+  }
+
+  // Case: the given email has already been used to register
+  if (!isNewEmail(email)) {
+    res.statusCode = 400;
+    return res.send(`${email} has already been used to register`);
+  }
+
+  console.log("express_server.js : 204");
 
   users[id] = { id, email, password };
 
