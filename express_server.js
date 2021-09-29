@@ -144,5 +144,5 @@ app.post("/logout", (req, res) => {
 
 // Listen to connections on the specified host and port
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`TinyApp listening on port ${PORT}!`);
 });
