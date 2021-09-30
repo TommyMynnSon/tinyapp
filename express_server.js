@@ -6,10 +6,7 @@ const morgan = require('morgan');
 
 
 // [ Helper Functions ]
-const { generateRandomString } = require('./helpers/generateRandomString');
-const { isNewEmail } = require('./helpers/isNewEmail');
-const { getUserByEmail } = require('./helpers/getUserByEmail');
-const { urlsForUser } = require('./helpers/urlsForUser');
+const { generateRandomString, isNewEmail, getUserByEmail, urlsForUser } = require('./helpers');
 
 
 // [ Server Setup ]
