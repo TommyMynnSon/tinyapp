@@ -187,7 +187,6 @@ app.get("/login", (req, res) => {
 
 // POST handlers
 app.post("/urls", (req, res) => {
-  // Case: not registered
   const userId = req.cookies["userId"];
   const user = users[userId];
 
@@ -206,7 +205,15 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const userId = req.cookies["userId"];
+  const user = users[userId];
   const shortURL = req.params.shortURL;
+
+  // Case: external POST request (e.g., cURL)
+  if (!user) {
+    res.statusMessage = `External post request to /urls/${shortURL}/delete detected`;
+    return res.redirect(`/login`);
+  }
 
   delete urlDatabase[shortURL];
 
@@ -214,10 +221,19 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
+  const userId = req.cookies["userId"];
+  const user = users[userId];
+
+  // Case: external POST request(e.g., cURL)
+  if (!user) {
+    res.statusMessage = `External post request to /urls/${shortURL} detected`;
+    return res.redirect(`/login`);
+  }
+
   const shortURL = req.params.id;
   const newLongURL = req.body.newLongURL;
 
-  urlDatabase[shortURL] = newLongURL;
+  urlDatabase[shortURL].longURL = newLongURL;
 
   res.redirect(`/urls`);
 });
