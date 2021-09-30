@@ -1,7 +1,9 @@
-const bodyParser = require("body-parser");
+// Dependencies
 const cookieParser = require("cookie-parser");
 const express = require("express");
-const app = express();
+const morgan = require("morgan");
+
+const app = express();       // Start new Express application
 const PORT = 8080;
 
 app.set('view engine', 'ejs');
@@ -97,8 +99,10 @@ const urlsForUser = (id) => {
 };
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(morgan('dev'));
+app.use(express.static('public'));
 
 // GET handlers
 app.get("/urls/new", (req, res) => {
@@ -178,10 +182,22 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  const userId = req.cookies["userId"];
+
+  if (userId) {
+    return res.redirect("/urls");
+  }
+
   res.render("registration");
 });
 
 app.get("/login", (req, res) => {
+  const userId = req.cookies["userId"];
+
+  if (userId) {
+    return res.redirect("/urls");
+  }
+
   res.render("login");
 });
 
