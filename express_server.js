@@ -91,6 +91,12 @@ app.use(cookieParser());
 
 // GET handlers
 app.get("/urls/new", (req, res) => {
+  // Case: not logged in
+  if (!req.cookies["user_id"]) {
+    res.statusMessage = "Client is not logged in";
+    return res.redirect(`/login`);
+  }
+
   const user_id = req.cookies["user_id"];
   const user = users[user_id];
 
@@ -148,6 +154,15 @@ app.get("/login", (req, res) => {
 
 // POST handlers
 app.post("/urls", (req, res) => {
+  // Case: not registered
+  const user_id = req.cookies["user_id"];
+  const user = users[user_id];
+
+  if (!user) {
+    res.statusMessage = "External post request to /urls detected"
+    return res.redirect(`/login`);
+  }
+
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
 
