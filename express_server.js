@@ -11,9 +11,7 @@ const users = {
 };
 
 const urlDatabase = {
-  //   "b2xVn2": "http://www.lighthouselabs.ca",
-  //   "9sm5xK": "http://www.google.com",
-  //   "yfjptz64": "https://www.tsn.ca"
+
 };
 
 // Generates a alphanumeric string of length 6
@@ -85,6 +83,19 @@ const findUserByEmail = (email) => {
   return undefined;
 };
 
+// Returns every URL which belongs to the user with the given id
+const urlsForUser = (id) => {
+  let urls = {};
+
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL]["userId"] === id) {
+      urls[shortURL] = urlDatabase[shortURL].longURL;
+    }
+  }
+
+  return urls;
+};
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -121,13 +132,7 @@ app.get("/urls", (req, res) => {
   const userId = req.cookies["userId"];
   const user = users[userId];
 
-  let urls = {};
-
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL]["userId"] === userId) {
-      urls[shortURL] = urlDatabase[shortURL].longURL;
-    }
-  }
+  let urls = urlsForUser(userId);
 
   const templateVars = { urls, user };
 
@@ -150,9 +155,22 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
   const userId = req.cookies["userId"];
   const user = users[userId];
+
+  // Case: shortURL is invalid
+  if (!urlDatabase[shortURL]) {
+    res.statusCode = 404;
+    return res.send(`/urls/${shortURL} was deleted or never existed in the first place`);
+  }
+
+  // Case: shortURL is valid, but client is logged out
+  if (!userId) {
+    res.statusMessage = "client is not logged in";
+    return res.redirect("/login");
+  }
+
+  const longURL = urlDatabase[shortURL].longURL;
 
   const templateVars = { shortURL, longURL, user };
 
