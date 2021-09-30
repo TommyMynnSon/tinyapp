@@ -74,6 +74,17 @@ const isNewEmail = (email) => {
   return true;
 };
 
+// Finds a user given an email
+const findUserByEmail = (email) => {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return users[user];
+    }
+  }
+
+  return undefined;
+};
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -133,7 +144,7 @@ app.get("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   res.render("login");
-})
+});
 
 // POST handlers
 app.post("/urls", (req, res) => {
@@ -162,16 +173,8 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls`);
 });
 
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-
-  res.cookie("username", username);
-
-  res.redirect(`/urls`);
-});
-
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
 
   res.redirect(`/urls`);
 });
@@ -205,8 +208,6 @@ app.post("/register", (req, res) => {
     return res.send(`${email} has already been used to register`);
   }
 
-  console.log("express_server.js : 204");
-
   users[id] = { id, email, password };
 
   res.cookie("user_id", id);
@@ -215,7 +216,44 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
 
+  const user = findUserByEmail(email);
+
+  // Case: empty email and password
+  if (!email && !password) {
+    res.statusCode = 400;
+    return res.send("Email and password cannot be blank");
+  }
+
+  // Case: empty email
+  if (!email) {
+    res.statusCode = 400;
+    return res.send("Email cannot be blank");
+  }
+
+  // Case: empty password
+  if (!password) {
+    res.statusCode = 400;
+    return res.send("Password cannot be blank");
+  }
+
+  // Case: user with given email cannot be found
+  if (!user) {
+    res.statusCode = 403;
+    return res.send(`${email} is not associated with any user`);
+  }
+
+  // Case: valid email, but the given password is wrong
+  if (user.password !== password) {
+    res.statusCode = 403;
+    return res.send(`${password} is not the password for ${email}`);
+  }
+
+  res.cookie("user_id", user.id);
+
+  res.redirect(`/urls`);
 });
 
 // Listen to connections on the specified host and port
