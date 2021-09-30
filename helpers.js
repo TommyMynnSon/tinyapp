@@ -48,4 +48,58 @@ const generateRandomString = () => {
   return randomString;
 };
 
-module.exports = { generateRandomString };
+/**
+ * Get user that owns email
+ * @param {string} email 
+ * @param {object} database 
+ * @returns {object}
+ */
+const getUserByEmail = (email, database) => {
+  for (const user in database) {
+    if (database[user].email === email) {
+      return database[user];
+    }
+  }
+
+  return undefined;
+};
+
+/**
+ * Check if email has already been used to register
+ * @param {string} email 
+ * @param {object} database
+ * @returns {boolean}
+ */
+const isNewEmail = (email, database) => {
+  for (const user in database) {
+    if (database[user].email === email) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Get URLs created by user with id
+ * @param {string} id 
+ * @returns {object}
+ */
+const urlsForUser = (id, database) => {
+  let urls = {};
+
+  for (const shortURL in database) {
+    if (database[shortURL]["userId"] === id) {
+      urls[shortURL] = database[shortURL].longURL;
+    }
+  }
+
+  return urls;
+};
+
+module.exports = {
+  generateRandomString,
+  getUserByEmail,
+  isNewEmail,
+  urlsForUser
+};
