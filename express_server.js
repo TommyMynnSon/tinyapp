@@ -1,7 +1,7 @@
 // Dependencies
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const express = require('express');
-const bcryptjs = require('bcryptjs')
+const bcryptjs = require('bcryptjs');
 const morgan = require('morgan');
 
 const app = express();       // Start new Express application
@@ -101,19 +101,25 @@ const urlsForUser = (id) => {
 
 // Middleware
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+
+app.use(cookieSession({
+  userId: 'userId',
+  keys: ['key1', 'key2']
+}));
+
 app.use(morgan('dev'));
-app.use(express.static('public'));
+
+// app.use(express.static('public'));
 
 // GET handlers
 app.get("/urls/new", (req, res) => {
   // Case: not logged in
-  if (!req.cookies["userId"]) {
+  if (!req.session.userId) {
     res.statusMessage = "Client is not logged in";
     return res.redirect(`/login`);
   }
 
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
   const user = users[userId];
 
   const templateVars = { user };
@@ -138,7 +144,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
   const user = users[userId];
 
   let urls = urlsForUser(userId);
@@ -164,7 +170,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
   const user = users[userId];
 
   // Case: shortURL is invalid
@@ -187,7 +193,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
 
   if (userId) {
     return res.redirect("/urls");
@@ -197,7 +203,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
 
   if (userId) {
     return res.redirect("/urls");
@@ -208,7 +214,7 @@ app.get("/login", (req, res) => {
 
 // POST handlers
 app.post("/urls", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
   const user = users[userId];
 
   // Case: external POST request (e.g., cURL)
@@ -226,7 +232,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
   const user = users[userId];
   const shortURL = req.params.shortURL;
 
@@ -242,7 +248,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session.userId;
   const user = users[userId];
 
   // Case: external POST request(e.g., cURL)
@@ -260,7 +266,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("userId");
+  req.session = null;
 
   res.redirect(`/urls`);
 });
@@ -297,7 +303,7 @@ app.post("/register", (req, res) => {
 
   users[id] = { id, email, hashedPassword };
 
-  res.cookie("userId", id);
+  req.session.userId = id;
 
   res.redirect(`/urls`);
 });
@@ -338,7 +344,7 @@ app.post("/login", (req, res) => {
     return res.send(`${password} is not the password for ${email}`);
   }
 
-  res.cookie("userId", user.id);
+  req.session.userId = user.id;
 
   res.redirect(`/urls`);
 });
