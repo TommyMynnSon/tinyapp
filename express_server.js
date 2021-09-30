@@ -1,14 +1,17 @@
-// Dependencies
-const cookieSession = require("cookie-session");
+// [ Dependencies ]
 const express = require('express');
+const cookieSession = require("cookie-session");
 const bcryptjs = require('bcryptjs');
 const morgan = require('morgan');
 
-const app = express();       // Start new Express application
-const PORT = 8080;
 
+// [ Server Setup ]
+const app = express();
+const PORT = 8080;
 app.set('view engine', 'ejs');
 
+
+// [ Databases ]
 const users = {
 
 };
@@ -17,7 +20,12 @@ const urlDatabase = {
 
 };
 
-// Generates a alphanumeric string of length 6
+
+// [ Functions ]
+/**
+ * Generates an alphanumeric string of length 6
+ * @returns {string}
+ */
 const generateRandomString = () => {
   // (Type 1) HTML code value bounds for uppercase letters
   const upperCaseStart = 65;
@@ -34,40 +42,45 @@ const generateRandomString = () => {
   let randomString = '';
 
   for (let i = 0; i < 6; i++) {
-    // Pick random type
+    // Pick random Type
     const min = 1;
     const max = 3;
 
-    let type = Math.floor(Math.random() * (max - min + 1)) + min;
+    const type = Math.floor(Math.random() * (max - min + 1)) + min;
 
     // Random HTML code
-    let asciiCode;
+    let htmlCode;
 
     // Pick random uppercase letter HTML code
     if (type === 1) {
-      asciiCode = Math.floor(Math.random() * (upperCaseEnd - upperCaseStart + 1)) + upperCaseStart;
+      htmlCode = Math.floor(Math.random() * (upperCaseEnd - upperCaseStart + 1)) + upperCaseStart;
     }
 
     // Pick random lowercase letter HTML code
     if (type === 2) {
-      asciiCode = Math.floor(Math.random() * (lowerCaseEnd - lowerCaseStart + 1)) + lowerCaseStart;
+      htmlCode = Math.floor(Math.random() * (lowerCaseEnd - lowerCaseStart + 1)) + lowerCaseStart;
     }
 
     // Pick random number HTML code
     if (type === 3) {
-      asciiCode = Math.floor(Math.random() * (numberEnd - numberStart + 1)) + numberStart;
+      htmlCode = Math.floor(Math.random() * (numberEnd - numberStart + 1)) + numberStart;
     }
 
-    randomString += String.fromCharCode(asciiCode);
+    randomString += String.fromCharCode(htmlCode);
   }
 
   return randomString;
 };
 
-// Checks if a given email has already been used to register
-const isNewEmail = (email) => {
-  for (const user in users) {
-    if (users[user].email === email) {
+/**
+ * Checks if email has already been used to register
+ * @param {string} email 
+ * @param {object} database
+ * @returns {boolean}
+ */
+const isNewEmail = (email, database) => {
+  for (const user in database) {
+    if (database[user].email === email) {
       return false;
     }
   }
@@ -75,43 +88,73 @@ const isNewEmail = (email) => {
   return true;
 };
 
-// Finds a user given an email
-const findUserByEmail = (email) => {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user];
+/**
+ * Gets user that owns email
+ * @param {string} email 
+ * @param {object} database 
+ * @returns {object}
+ */
+const getUserByEmail = (email, database) => {
+  for (const user in database) {
+    if (database[user].email === email) {
+      return database[user];
     }
   }
 
   return undefined;
 };
 
-// Returns every URL which belongs to the user with the given id
-const urlsForUser = (id) => {
+/**
+ * Get URLs created by user with id
+ * @param {*} id 
+ * @returns {object}
+ */
+const urlsForUser = (id, database) => {
   let urls = {};
 
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL]["userId"] === id) {
-      urls[shortURL] = urlDatabase[shortURL].longURL;
+  for (const shortURL in database) {
+    if (database[shortURL]["userId"] === id) {
+      urls[shortURL] = database[shortURL].longURL;
     }
   }
 
   return urls;
 };
 
-// Middleware
-app.use(express.urlencoded({ extended: false }));
 
+// [ Middleware ]
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieSession({
   userId: 'userId',
   keys: ['key1', 'key2']
 }));
-
 app.use(morgan('dev'));
 
-// app.use(express.static('public'));
 
-// GET handlers
+// [ GET Request Handlers ]
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
+
+app.get("/users.json", (req, res) => {
+  res.json(users);
+});
+
+app.get("/", (req, res) => {
+  res.send("Hello!");
+});
+
+app.get("/urls", (req, res) => {
+  const userId = req.session.userId;
+  const user = users[userId];
+
+  let urls = urlsForUser(userId, urlDatabase);
+
+  const templateVars = { urls, user };
+
+  res.render(`urls_index`, templateVars);
+});
+
 app.get("/urls/new", (req, res) => {
   // Case: not logged in
   if (!req.session.userId) {
@@ -125,33 +168,6 @@ app.get("/urls/new", (req, res) => {
   const templateVars = { user };
 
   res.render("urls_new", templateVars);
-});
-
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/users.json", (req, res) => {
-  res.json(users);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-app.get("/urls", (req, res) => {
-  const userId = req.session.userId;
-  const user = users[userId];
-
-  let urls = urlsForUser(userId);
-
-  const templateVars = { urls, user };
-
-  res.render(`urls_index`, templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -212,7 +228,8 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
-// POST handlers
+
+// [ POST Request Handlers ]
 app.post("/urls", (req, res) => {
   const userId = req.session.userId;
   const user = users[userId];
@@ -296,7 +313,7 @@ app.post("/register", (req, res) => {
   }
 
   // Case: the given email has already been used to register
-  if (!isNewEmail(email)) {
+  if (!isNewEmail(email, users)) {
     res.statusCode = 400;
     return res.send(`${email} has already been used to register`);
   }
@@ -312,7 +329,7 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email, users);
 
   // Case: empty email and password
   if (!email && !password) {
@@ -349,7 +366,9 @@ app.post("/login", (req, res) => {
   res.redirect(`/urls`);
 });
 
-// Listen to connections on the specified host and port
+
+// ---------------------------------------------------------------------------------------------------------
+
 app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
