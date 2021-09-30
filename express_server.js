@@ -1,7 +1,8 @@
 // Dependencies
 const cookieParser = require("cookie-parser");
-const express = require("express");
-const morgan = require("morgan");
+const express = require('express');
+const bcryptjs = require('bcryptjs')
+const morgan = require('morgan');
 
 const app = express();       // Start new Express application
 const PORT = 8080;
@@ -126,6 +127,10 @@ app.get("/", (req, res) => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
+});
+
+app.get("/users.json", (req, res) => {
+  res.json(users);
 });
 
 app.get("/hello", (req, res) => {
@@ -264,6 +269,7 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcryptjs.hashSync(password, 10);
 
   // Case: empty email and password
   if (!email && !password) {
@@ -289,7 +295,7 @@ app.post("/register", (req, res) => {
     return res.send(`${email} has already been used to register`);
   }
 
-  users[id] = { id, email, password };
+  users[id] = { id, email, hashedPassword };
 
   res.cookie("userId", id);
 
@@ -327,7 +333,7 @@ app.post("/login", (req, res) => {
   }
 
   // Case: valid email, but the given password is wrong
-  if (user.password !== password) {
+  if (!bcryptjs.compareSync(password, user.hashedPassword)) {
     res.statusCode = 403;
     return res.send(`${password} is not the password for ${email}`);
   }
