@@ -40,14 +40,14 @@ const testUrlsEmpty = {
 
 describe('getUserByEmail', () => {
   it('should return a user with valid email', () => {
-    const user = getUserByEmail("user@example.com", testUsers)
+    const user = getUserByEmail("user@example.com", testUsers);
     const expectedOutput = "userRandomID";
 
     assert.strictEqual(user.id, expectedOutput);
   });
 
   it('should return undefined with invalid email', () => {
-    const user = getUserByEmail("does_not_exist@example.com", testUsers)
+    const user = getUserByEmail("does_not_exist@example.com", testUsers);
 
     assert.isUndefined(user);
   });

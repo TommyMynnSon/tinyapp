@@ -50,8 +50,8 @@ const generateRandomString = () => {
 
 /**
  * Get user that owns email
- * @param {string} email 
- * @param {object} database 
+ * @param {string} email
+ * @param {object} database
  * @returns {object}
  */
 const getUserByEmail = (email, database) => {
@@ -66,7 +66,7 @@ const getUserByEmail = (email, database) => {
 
 /**
  * Check if email has already been used to register
- * @param {string} email 
+ * @param {string} email
  * @param {object} database
  * @returns {boolean}
  */
@@ -82,7 +82,7 @@ const isNewEmail = (email, database) => {
 
 /**
  * Get URLs created by user with id
- * @param {string} id 
+ * @param {string} id
  * @returns {object}
  */
 const urlsForUser = (id, database) => {
