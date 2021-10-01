@@ -4,8 +4,10 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
+Screenshot of application populated with newly created short URLs.
 !["Screenshot of application populated with newly created short URLs."](https://github.com/TommyMynnSon/tinyapp/blob/main/docs/urls_index.png?raw=true)
 
+Screenshot of application showcasing the editing of the URL that short URL 286TXj links to. In this scenario, once a user presses the update button, the URL that short URL 286TXj links to will be updated from http://www.lighthouselabs.com to https://www.example.com.
 !["Screenshot of application showcasing the editing of the URL that short URL 286TXj links to."](https://github.com/TommyMynnSon/tinyapp/blob/main/docs/urls_edit.png?raw=true)
 
 ## Dependencies
