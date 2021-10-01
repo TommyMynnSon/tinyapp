@@ -1,92 +1,81 @@
 // [ Dependencies ]
 const express = require('express');
-const cookieSession = require("cookie-session");
-const bcryptjs = require('bcryptjs');
 const morgan = require('morgan');
+const cookieSession = require('cookie-session');
+const bcryptjs = require('bcryptjs');
 
+// [ Databases ]
+const { usersDatabase, urlDatabase } = require('./database');
 
 // [ Helper Functions ]
 const { generateRandomString, isNewEmail, getUserByEmail, urlsForUser } = require('./helpers');
-
 
 // [ Server Setup ]
 const app = express();
 const PORT = 8080;
 app.set('view engine', 'ejs');
 
-
-// [ Databases ]
-const users = {
-
-};
-
-const urlDatabase = {
-
-};
-
-
 // [ Middleware ]
 app.use(express.urlencoded({ extended: false }));
+app.use(morgan('dev'));
 app.use(cookieSession({
   userId: 'userId',
   keys: ['key1', 'key2']
 }));
-app.use(morgan('dev'));
-
 
 // [ GET Request Handlers ]
-app.get("/urls.json", (req, res) => {
+app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/users.json", (req, res) => {
-  res.json(users);
+app.get('/users.json', (req, res) => {
+  res.json(usersDatabase);
 });
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   const userId = req.session.userId;
-  const user = users[userId];
+  const user = usersDatabase[userId];
+
+  if (!user) {
+    res.statusMessage = 'Client is not logged in.';
+    return res.redirect('/login');
+  }
+
+  res.redirect('/urls');
+});
+
+app.get('/urls', (req, res) => {
+  const userId = req.session.userId;
+  const user = usersDatabase[userId];
 
   let urls = urlsForUser(userId, urlDatabase);
 
   const templateVars = { urls, user };
 
-  res.render(`urls_index`, templateVars);
+  res.render('urls_index', templateVars);
 });
 
-app.get("/urls", (req, res) => {
-  const userId = req.session.userId;
-  const user = users[userId];
-
-  let urls = urlsForUser(userId, urlDatabase);
-
-  const templateVars = { urls, user };
-
-  res.render(`urls_index`, templateVars);
-});
-
-app.get("/urls/new", (req, res) => {
-  // Case: not logged in
+app.get('/urls/new', (req, res) => {
   if (!req.session.userId) {
-    res.statusMessage = "Client is not logged in";
-    return res.redirect(`/login`);
+    res.statusMessage = 'Client is not logged in.';
+    return res.redirect('/login');
   }
 
   const userId = req.session.userId;
-  const user = users[userId];
+  const user = usersDatabase[userId];
 
   const templateVars = { user };
 
-  res.render("urls_new", templateVars);
+  res.render('urls_new', templateVars);
 });
 
-app.get("/u/:shortURL", (req, res) => {
+app.get('/u/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
 
-  // Case: longURL does does not match to the given shortURL
   if (!urlDatabase[shortURL]) {
     res.statusCode = 404;
-    return res.send(`/u/${shortURL} was deleted or never existed in the first place`);
+    res.statusMessage = `/u/${shortURL} was deleted or never existed in the first place.`;
+    return res.send(`/u/${shortURL} was deleted or never existed in the first place.`);
   }
 
   const longURL = urlDatabase[shortURL].longURL;
@@ -97,18 +86,26 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const userId = req.session.userId;
-  const user = users[userId];
+  const user = usersDatabase[userId];
 
   // Case: shortURL is invalid
   if (!urlDatabase[shortURL]) {
     res.statusCode = 404;
+    res.statusMessage = `/urls/${shortURL} was deleted or never existed in the first place`;
     return res.send(`/urls/${shortURL} was deleted or never existed in the first place`);
   }
 
   // Case: shortURL is valid, but client is logged out
   if (!userId) {
-    res.statusMessage = "client is not logged in";
+    res.statusMessage = "Client is not logged in.";
     return res.redirect("/login");
+  }
+
+  // Case: client is logged in, but does not own endpoint
+  if (urlDatabase[shortURL].userId !== userId) {
+    res.statusCode = 404;
+    res.statusMessage = `${shortURL} does not belong to ${usersDatabase[userId].email}`;
+    return res.send(`${shortURL} does not belong to ${usersDatabase[userId].email}`);
   }
 
   const longURL = urlDatabase[shortURL].longURL;
@@ -138,15 +135,14 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
-
 // [ POST Request Handlers ]
 app.post("/urls", (req, res) => {
   const userId = req.session.userId;
-  const user = users[userId];
+  const user = usersDatabase[userId];
 
-  // Case: external POST request (e.g., cURL)
+  // Case: client is not logged in
   if (!user) {
-    res.statusMessage = "External post request to /urls detected";
+    res.statusMessage = 'Client is not logged in to access POST request to /urls.';
     return res.redirect(`/login`);
   }
 
@@ -160,13 +156,28 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session.userId;
-  const user = users[userId];
+  const user = usersDatabase[userId];
   const shortURL = req.params.shortURL;
 
-  // Case: external POST request (e.g., cURL)
+  // Case: shortURL does not exist
+  if (!urlDatabase[shortURL]) {
+    res.statusCode = 400;
+    res.statusMessage = `/urls/${shortURL}/delete does not exist.`;
+    return res.send(`/urls/${shortURL}/delete does not exist.`)
+  }
+
+  // Case: client is not logged in
   if (!user) {
-    res.statusMessage = `External post request to /urls/${shortURL}/delete detected`;
-    return res.redirect(`/login`);
+    res.statusCode = 400;
+    res.statusMessage = `Client is not logged in to access POST request to /urls/${shortURL}/delete.`;
+    return res.send(`Client is not logged in to access POST request to /urls/${shortURL}/delete.`);
+  }
+
+  // Case: client is logged in, but does not own shortURL
+  if (urlDatabase[shortURL].userId !== userId) {
+    res.statusCode = 400;
+    res.statusMessage = `Client is logged in, but does not own ${shortURL}.`;
+    return res.send(`Client is logged in, but does not own ${shortURL}.`);
   }
 
   delete urlDatabase[shortURL];
@@ -176,15 +187,31 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const userId = req.session.userId;
-  const user = users[userId];
-
-  // Case: external POST request(e.g., cURL)
-  if (!user) {
-    res.statusMessage = `External post request to /urls/${shortURL} detected`;
-    return res.redirect(`/login`);
-  }
+  const user = usersDatabase[userId];
 
   const shortURL = req.params.id;
+
+  // Case: shortURL does not exist
+  if (!urlDatabase[shortURL]) {
+    res.statusCode = 400;
+    res.statusMessage = `/urls/${shortURL} does not exist.`;
+    return res.send(`/urls/${shortURL} does not exist.`)
+  }
+
+  // Case: client is not logged in
+  if (!user) {
+    res.statusCode = 400;
+    res.statusMessage = `Client is not logged in to access POST request to /urls/${shortURL}.`;
+    return res.send(`Client is not logged in to access POST request to /urls/${shortURL}.`);
+  }
+
+  // Case: client is logged in, but does not own shortURL
+  if (urlDatabase[shortURL].userId !== userId) {
+    res.statusCode = 400;
+    res.statusMessage = `Client is logged in, but does not own ${shortURL}.`;
+    return res.send(`Client is logged in, but does not own ${shortURL}.`);
+  }
+
   const newLongURL = req.body.newLongURL;
 
   urlDatabase[shortURL].longURL = newLongURL;
@@ -207,28 +234,32 @@ app.post("/register", (req, res) => {
   // Case: empty email and password
   if (!email && !password) {
     res.statusCode = 400;
-    return res.send("Email and password cannot be blank");
+    res.statusMessage = 'Email and password cannot be blank.';
+    return res.send('Email and password cannot be blank.');
   }
 
   // Case: empty email
   if (!email) {
     res.statusCode = 400;
-    return res.send("Email cannot be blank");
+    res.statusMessage = 'Email cannot be blank.';
+    return res.send('Email cannot be blank.');
   }
 
   // Case: empty password
   if (!password) {
     res.statusCode = 400;
-    return res.send("Password cannot be blank");
+    res.statusMessage = 'Password cannot be blank.';
+    return res.send('Password cannot be blank.');
   }
 
   // Case: the given email has already been used to register
-  if (!isNewEmail(email, users)) {
+  if (!isNewEmail(email, usersDatabase)) {
     res.statusCode = 400;
-    return res.send(`${email} has already been used to register`);
+    res.statusMessage = `${email} has already been used to register.`;
+    return res.send(`${email} has already been used to register.`);
   }
 
-  users[id] = { id, email, hashedPassword };
+  usersDatabase[id] = { id, email, hashedPassword };
 
   req.session.userId = id;
 
@@ -239,36 +270,41 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = getUserByEmail(email, users);
+  const user = getUserByEmail(email, usersDatabase);
 
   // Case: empty email and password
   if (!email && !password) {
     res.statusCode = 400;
-    return res.send("Email and password cannot be blank");
+    res.statusMessage = 'Email and password cannot be blank.';
+    return res.send('Email and password cannot be blank.');
   }
 
   // Case: empty email
   if (!email) {
     res.statusCode = 400;
-    return res.send("Email cannot be blank");
+    res.statusMessage = 'Email cannot be blank.';
+    return res.send('Email cannot be blank.');
   }
 
   // Case: empty password
   if (!password) {
     res.statusCode = 400;
-    return res.send("Password cannot be blank");
+    res.statusMessage = 'Password cannot be blank.';
+    return res.send('Password cannot be blank.');
   }
 
   // Case: user with given email cannot be found
   if (!user) {
     res.statusCode = 403;
-    return res.send(`${email} is not associated with any user`);
+    res.statusMessage = `${email} is not associated with any user.`;
+    return res.send(`${email} is not associated with any user.`);
   }
 
   // Case: valid email, but the given password is wrong
   if (!bcryptjs.compareSync(password, user.hashedPassword)) {
     res.statusCode = 403;
-    return res.send(`${password} is not the password for ${email}`);
+    res.statusMessage = `${password} is the wrong password for ${email}.`;
+    return res.send(`${password} is the wrong password for ${email}.`);
   }
 
   req.session.userId = user.id;
