@@ -83,6 +83,7 @@ const isNewEmail = (email, database) => {
 /**
  * Get URLs created by user with id
  * @param {string} id
+ * @param {object} database
  * @returns {object}
  */
 const urlsForUser = (id, database) => {
